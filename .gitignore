@@ -1,1 +1,23 @@
-# Placeholder: repository ignore rules will be added later.
+# Maven build output
+**/target/
+
+# Local configuration and secrets (keep examples tracked)
+.env
+.env.*
+!.env.example
+**/application-local.yml
+**/application-local.yaml
+**/application-local.properties
+
+# Editors and operating systems
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Runtime logs
+*.log

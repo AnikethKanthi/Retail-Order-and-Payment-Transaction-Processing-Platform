@@ -1,0 +1,10 @@
+# Baseline configuration only; no infrastructure connections are enabled yet.
+spring:
+  application:
+    name: notification-service
+
+server:
+  port: ${SERVER_PORT:8084}
+
+# TODO: Add database, Kafka, and Redis settings when integrations are implemented.
+# Keep credentials in environment variables or untracked application-local.yml.
