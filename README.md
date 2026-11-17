@@ -14,3 +14,8 @@ Build the backend from the repository root in PowerShell:
 ```
 
 On Linux/macOS: `sh ./backend/mvnw -f backend/pom.xml clean verify`.
+
+PostgreSQL structures, constraints, service ownership, and standalone Flyway
+migrations are documented in [database design](docs/database-design.md) and the
+[migration runbook](database/README.md). Migrations are run explicitly against a
+configured database; backend builds do not apply them.

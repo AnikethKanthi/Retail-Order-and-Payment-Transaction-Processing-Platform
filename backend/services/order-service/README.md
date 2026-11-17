@@ -2,6 +2,10 @@
 
 Maven module: `com.aniketh.retail:order-service`.
 
+Owns `order_service.customers`, `orders`, and `order_items`. It is the authority
+for customer profiles and checkout snapshots. Use only the order runtime database
+role; see [database ownership](../../../docs/database-design.md).
+
 This initialization contains a module descriptor and baseline configuration only.
 There is no application entry point or business logic yet. The module builds as
 an ordinary JAR; it is not an executable Spring Boot application at this stage.

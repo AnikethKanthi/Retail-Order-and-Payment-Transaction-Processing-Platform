@@ -2,6 +2,10 @@
 
 Maven module: `com.aniketh.retail:inventory-service`.
 
+Owns `inventory_service.inventory`, including stock and reserved balances by SKU
+and warehouse. Use only the inventory runtime database role; see
+[database ownership](../../../docs/database-design.md).
+
 This initialization contains a module descriptor and baseline configuration only.
 There is no application entry point or business logic yet. The module builds as
 an ordinary JAR; it is not an executable Spring Boot application at this stage.

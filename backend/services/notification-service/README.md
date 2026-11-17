@@ -2,6 +2,10 @@
 
 Maven module: `com.aniketh.retail:notification-service`.
 
+Has no persisted tables or database role in this phase. Consume events rather
+than querying other service schemas. See
+[database ownership](../../../docs/database-design.md).
+
 This initialization contains a module descriptor and baseline configuration only.
 There is no application entry point or business logic yet. The module builds as
 an ordinary JAR; it is not an executable Spring Boot application at this stage.

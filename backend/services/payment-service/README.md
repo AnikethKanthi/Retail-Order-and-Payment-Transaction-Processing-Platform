@@ -2,6 +2,10 @@
 
 Maven module: `com.aniketh.retail:payment-service`.
 
+Owns `payment_service.payments` and append-only `transaction_records`. Order IDs
+are external references validated through the order service. Use only the payment
+runtime database role; see [database ownership](../../../docs/database-design.md).
+
 This initialization contains a module descriptor and baseline configuration only.
 There is no application entry point or business logic yet. The module builds as
 an ordinary JAR; it is not an executable Spring Boot application at this stage.

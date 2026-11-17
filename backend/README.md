@@ -68,6 +68,11 @@ When an application main class is added, declare the plugin in that service's
 `build/plugins` to enable executable JAR packaging. Keep `retail-shared` a normal
 library JAR without Boot repackaging.
 
+Database structures and a standalone Flyway deployment project are now available
+under [database setup](../database/README.md). They are outside this reactor;
+normal backend builds remain database-independent. See
+[database ownership](../docs/database-design.md) before adding persistence code.
+
 ## Conventions
 
 - Use Maven's `src/main/java`, `src/main/resources`, `src/test/java`, and
