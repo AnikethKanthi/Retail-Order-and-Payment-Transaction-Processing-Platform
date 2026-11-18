@@ -1,10 +1,17 @@
-# Baseline configuration only; no infrastructure connections are enabled yet.
 spring:
   application:
     name: order-service
+  jackson:
+    deserialization:
+      accept-float-as-int: false
+  datasource:
+    url: ${ORDER_DB_URL:jdbc:postgresql://localhost:5432/retail_platform}
+    username: ${ORDER_DB_USER}
+    password: ${ORDER_DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
 
 server:
   port: ${SERVER_PORT:8081}
-
-# TODO: Add database, Kafka, and Redis settings when integrations are implemented.
-# Keep credentials in environment variables or untracked application-local.yml.

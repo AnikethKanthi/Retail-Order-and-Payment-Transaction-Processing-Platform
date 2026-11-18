@@ -6,16 +6,47 @@ Owns `order_service.customers`, `orders`, and `order_items`. It is the authority
 for customer profiles and checkout snapshots. Use only the order runtime database
 role; see [database ownership](../../../docs/database-design.md).
 
-This initialization contains a module descriptor and baseline configuration only.
-There is no application entry point or business logic yet. The module builds as
-an ordinary JAR; it is not an executable Spring Boot application at this stage.
+## Run locally
 
-- Configuration: `src/main/resources/application.yml`.
-- Default future HTTP port: `8081`; override with `SERVER_PORT`.
-- Java package convention: `com.aniketh.retail.order`.
-- Build from `backend/`: `sh ./mvnw -pl services/order-service -am clean verify`
-  (Windows: `mvnw.cmd`).
-- See [backend setup](../../README.md) for prerequisites and conventions.
+Apply the [database migrations and runtime grants](../../../database/README.md)
+first. Set `ORDER_DB_USER` to the login granted membership in `retail_order_app`
+and set `ORDER_DB_PASSWORD` to its password. `ORDER_DB_URL` defaults to
+`jdbc:postgresql://localhost:5432/retail_platform`. The service validates the
+schema on startup. Use an existing active customer ID when creating orders.
 
-TODO: Add an application entry point, activate `spring-boot-maven-plugin` in this
-module's build plugins, and implement the service in a later phase.
+From `backend/` in PowerShell:
+
+```powershell
+.\mvnw.cmd -pl services/order-service -am clean verify
+java -jar services/order-service/target/order-service-0.1.0-SNAPSHOT.jar
+```
+
+The HTTP port defaults to `8081`. Set `SERVER_PORT` to override it.
+
+## Order API
+
+`POST /api/orders` requires an `Idempotency-Key` header containing 1–128 printable
+ASCII characters without spaces. Example JSON body:
+
+```json
+{
+  "customerId": "4f85e0da-40a6-4a72-aa50-71a499d3c990",
+  "currency": "USD",
+  "shippingAmount": 2.00,
+  "items": [
+    {"sku": "SKU-1", "productName": "Notebook", "quantity": 2, "unitPrice": 5.00}
+  ]
+}
+```
+
+Optional `shippingAmount`, line `discountAmount`, and line `taxAmount` default
+to zero. Monetary inputs must fit the currency's minor units. The response
+includes the `PENDING` order, its line items, and calculated totals. A new order
+returns `201 Created` with a `Location` header. A retry with equivalent checkout
+data returns the existing order as `200 OK`. Reusing the key with different data
+returns `409 Conflict`.
+
+`GET /api/orders/{id}` returns the order and its items in line order, or `404`
+for an unknown UUID. Request errors use `application/problem+json`. Malformed or
+invalid inputs return `400`, and business validation failures such as an inactive
+customer or a discount above the line gross amount return `422`.

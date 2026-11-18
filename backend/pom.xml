@@ -33,6 +33,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
+        <retail.buildDirectory>${project.basedir}/target</retail.buildDirectory>
     </properties>
 
     <!-- Spring Boot manages third-party versions; internal versions live here. -->
@@ -47,6 +48,7 @@
     </dependencyManagement>
 
     <build>
+        <directory>${retail.buildDirectory}</directory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -84,4 +86,18 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>external-build-output</id>
+            <activation>
+                <property>
+                    <name>retail.buildRoot</name>
+                </property>
+            </activation>
+            <properties>
+                <retail.buildDirectory>${retail.buildRoot}/${project.artifactId}</retail.buildDirectory>
+            </properties>
+        </profile>
+    </profiles>
 </project>
