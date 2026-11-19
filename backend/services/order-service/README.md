@@ -41,7 +41,7 @@ ASCII characters without spaces. Example JSON body:
 
 Optional `shippingAmount`, line `discountAmount`, and line `taxAmount` default
 to zero. Monetary inputs must fit the currency's minor units. The response
-includes the `PENDING` order, its line items, and calculated totals. A new order
+includes the `PENDING_PAYMENT` order, its line items, and calculated totals. A new order
 returns `201 Created` with a `Location` header. A retry with equivalent checkout
 data returns the existing order as `200 OK`. Reusing the key with different data
 returns `409 Conflict`.
@@ -50,3 +50,17 @@ returns `409 Conflict`.
 for an unknown UUID. Request errors use `application/problem+json`. Malformed or
 invalid inputs return `400`, and business validation failures such as an inactive
 customer or a discount above the line gross amount return `422`.
+
+`GET /api/orders` lists order summaries. `GET /api/customers/{customerId}/orders`
+lists summaries for one customer, with an empty page when there are no orders.
+Both return `content` and `page` metadata. They accept zero-based `page`
+(default 0), `size` (default 20, range 1–100), and a single `sort` value in
+`field,direction` format. Sort fields are `createdAt`, `updatedAt`, `totalAmount`,
+and `orderNumber`. The default is `createdAt,desc`, and the order ID breaks ties.
+Use the order detail endpoint for line items.
+
+`PATCH /api/orders/{id}/status` accepts a body such as `{"status":"CONFIRMED"}`.
+An order can move from `PENDING_PAYMENT` to `CONFIRMED`, `CANCELLED`, or `FAILED`.
+These three states are terminal. Repeating the current lifecycle status returns
+the order without another update. Invalid transitions return `409`, and unknown
+orders return `404`. Historical `FULFILLED` orders remain readable.

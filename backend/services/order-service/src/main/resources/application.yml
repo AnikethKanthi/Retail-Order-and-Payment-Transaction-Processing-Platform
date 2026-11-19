@@ -4,6 +4,7 @@ spring:
   jackson:
     deserialization:
       accept-float-as-int: false
+      fail-on-numbers-for-enums: true
   datasource:
     url: ${ORDER_DB_URL:jdbc:postgresql://localhost:5432/retail_platform}
     username: ${ORDER_DB_USER}

@@ -2,6 +2,8 @@ package com.aniketh.retail.order;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.Generated;
+import org.hibernate.annotations.SourceType;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -28,7 +30,7 @@ class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 24)
-    OrderStatus status = OrderStatus.PENDING;
+    OrderStatus status = OrderStatus.PENDING_PAYMENT;
 
     @Column(nullable = false, length = 3)
     String currency;
@@ -53,7 +55,7 @@ class Order {
     @Column(nullable = false)
     Instant createdAt;
 
-    @Generated
+    @UpdateTimestamp(source = SourceType.DB)
     @Column(nullable = false)
     Instant updatedAt;
 
@@ -80,5 +82,15 @@ class Order {
         subtotal = subtotal.add(item.grossAmount());
         discountAmount = discountAmount.add(item.discountAmount);
         taxAmount = taxAmount.add(item.taxAmount);
+    }
+
+    void transitionTo(OrderStatus nextStatus) {
+        if (status == nextStatus && status != OrderStatus.FULFILLED) {
+            return;
+        }
+        if (status != OrderStatus.PENDING_PAYMENT || nextStatus == OrderStatus.FULFILLED) {
+            throw OrderException.invalidTransition(status, nextStatus);
+        }
+        status = nextStatus;
     }
 }

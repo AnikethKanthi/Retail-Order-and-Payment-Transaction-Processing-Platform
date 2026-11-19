@@ -1,5 +1,7 @@
 package com.aniketh.retail.order;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +56,24 @@ class OrderService {
     @Transactional(readOnly = true)
     public OrderResponse get(UUID id) {
         Order order = orders.findById(id).orElseThrow(() -> OrderException.notFound(id));
+        return OrderResponse.from(order, items.findByOrder_IdOrderByLineNumberAsc(id));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<OrderSummary> list(Pageable pageable) {
+        return orders.findAll(pageable).map(OrderSummary::from);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<OrderSummary> customerHistory(UUID customerId, Pageable pageable) {
+        return orders.findByCustomerId(customerId, pageable).map(OrderSummary::from);
+    }
+
+    @Transactional
+    public OrderResponse updateStatus(UUID id, OrderStatus status) {
+        Order order = orders.findForStatusUpdate(id).orElseThrow(() -> OrderException.notFound(id));
+        order.transitionTo(status);
+        orders.flush();
         return OrderResponse.from(order, items.findByOrder_IdOrderByLineNumberAsc(id));
     }
 

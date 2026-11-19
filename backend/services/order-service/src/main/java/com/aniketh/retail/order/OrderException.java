@@ -25,4 +25,13 @@ class OrderException extends RuntimeException {
     static OrderException invalid(String message) {
         return new OrderException(HttpStatus.UNPROCESSABLE_ENTITY, message);
     }
+
+    static OrderException badRequest(String message) {
+        return new OrderException(HttpStatus.BAD_REQUEST, message);
+    }
+
+    static OrderException invalidTransition(OrderStatus current, OrderStatus requested) {
+        return new OrderException(HttpStatus.CONFLICT,
+                "Order status cannot transition from " + current + " to " + requested + ".");
+    }
 }

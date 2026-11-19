@@ -36,7 +36,7 @@ class OrderServiceTest {
         var result = service.create("checkout", request("1.50"));
 
         assertThat(result.created()).isTrue();
-        assertThat(result.order().status()).isEqualTo(OrderStatus.PENDING);
+        assertThat(result.order().status()).isEqualTo(OrderStatus.PENDING_PAYMENT);
         assertThat(result.order().subtotal()).isEqualByComparingTo("20.00");
         assertThat(result.order().discountAmount()).isEqualByComparingTo("1.50");
         assertThat(result.order().taxAmount()).isEqualByComparingTo("0.50");
@@ -95,6 +95,26 @@ class OrderServiceTest {
         assertThat(service.get(id).id()).isEqualTo(id);
         assertThat(assertThrows(OrderException.class, () -> service.get(UUID.randomUUID())).status)
                 .isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void onlyPendingOrdersCanTransitionAndSameStatusRequestsCanBeRetried() {
+        for (OrderStatus next : List.of(OrderStatus.CONFIRMED, OrderStatus.CANCELLED, OrderStatus.FAILED)) {
+            Order order = new Order(CUSTOMER, "checkout", "USD", BigDecimal.ZERO);
+            order.transitionTo(next);
+            order.transitionTo(next);
+            assertThat(order.status).isEqualTo(next);
+            assertThat(assertThrows(OrderException.class, () -> order.transitionTo(OrderStatus.PENDING_PAYMENT)).status)
+                    .isEqualTo(HttpStatus.CONFLICT);
+        }
+    }
+
+    @Test
+    void doesNotAllowTransitionsToOrFromHistoricalFulfilledStatus() {
+        Order order = new Order(CUSTOMER, "checkout", "USD", BigDecimal.ZERO);
+        assertThrows(OrderException.class, () -> order.transitionTo(OrderStatus.FULFILLED));
+        order.status = OrderStatus.FULFILLED;
+        assertThrows(OrderException.class, () -> order.transitionTo(OrderStatus.CANCELLED));
     }
 
     private CreateOrderRequest request(String discount) {

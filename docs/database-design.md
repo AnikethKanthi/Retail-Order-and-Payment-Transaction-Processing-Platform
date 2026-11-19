@@ -90,7 +90,8 @@ Nullable provider references allow a request to be persisted before the provider
 responds; PostgreSQL uniqueness permits multiple NULLs. Canonical provider names,
 SKU case, and idempotency semantics must be consistent at API boundaries.
 
-Order statuses: PENDING, CONFIRMED, PAYMENT_FAILED, CANCELLED, FULFILLED. Payment
+Order lifecycle statuses are PENDING_PAYMENT, CONFIRMED, CANCELLED, and FAILED.
+Historical FULFILLED rows remain readable. Payment
 statuses: PENDING, AUTHORIZED, CAPTURED, FAILED, CANCELLED, PARTIALLY_REFUNDED,
 REFUNDED. Transaction operations: AUTHORIZATION, CAPTURE, REFUND, VOID; observation
 outcomes: SUCCEEDED, FAILED, UNKNOWN. UNKNOWN records a definitive observation of
