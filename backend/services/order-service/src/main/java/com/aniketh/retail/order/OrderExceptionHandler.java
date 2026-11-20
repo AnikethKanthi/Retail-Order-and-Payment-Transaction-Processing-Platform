@@ -1,5 +1,8 @@
 package com.aniketh.retail.order;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -12,12 +15,26 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.sql.SQLException;
+
 @RestControllerAdvice
 class OrderExceptionHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(OrderExceptionHandler.class);
 
     @ExceptionHandler(OrderException.class)
     ProblemDetail handleOrderError(OrderException exception) {
         return ProblemDetail.forStatusAndDetail(exception.status, exception.getMessage());
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    ProblemDetail handleDatabaseError(DataAccessException exception) {
+        String sqlState = exception.getMostSpecificCause() instanceof SQLException cause
+                ? cause.getSQLState() : "unavailable";
+        LOGGER.error("Order database operation failed: category={}, SQLState={}",
+                exception.getClass().getSimpleName(), sqlState);
+        return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
+                "The order operation could not be completed.");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

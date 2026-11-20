@@ -84,6 +84,10 @@ class Order {
         taxAmount = taxAmount.add(item.taxAmount);
     }
 
+    BigDecimal calculatedTotal() {
+        return subtotal.subtract(discountAmount).add(taxAmount).add(shippingAmount);
+    }
+
     void transitionTo(OrderStatus nextStatus) {
         if (status == nextStatus && status != OrderStatus.FULFILLED) {
             return;

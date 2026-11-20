@@ -24,6 +24,7 @@ interface OrderRepository extends JpaRepository<Order, UUID> {
             SELECT EXISTS (
                 SELECT 1 FROM order_service.customers
                 WHERE id = :customerId AND status = 'ACTIVE'
+                FOR SHARE
             )
             """, nativeQuery = true)
     boolean hasActiveCustomer(UUID customerId);

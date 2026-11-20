@@ -66,4 +66,8 @@ class OrderItem {
     BigDecimal grossAmount() {
         return unitPrice.multiply(BigDecimal.valueOf(quantity));
     }
+
+    BigDecimal calculatedTotal(BigDecimal grossAmount) {
+        return grossAmount.subtract(discountAmount).add(taxAmount);
+    }
 }

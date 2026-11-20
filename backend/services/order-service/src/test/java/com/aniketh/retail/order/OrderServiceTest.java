@@ -78,6 +78,18 @@ class OrderServiceTest {
     }
 
     @Test
+    void rejectsTotalOverflowBeforeDatabaseAccess() {
+        var request = new CreateOrderRequest(CUSTOMER, "USD", new BigDecimal("0.01"), List.of(
+                new CreateOrderRequest.Item("MAX", "Maximum price", 1,
+                        new BigDecimal("999999999999999.99"), null, null)));
+
+        var error = assertThrows(OrderException.class, () -> service.create("overflow", request));
+        assertThat(error.status).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(error).hasMessage("An order or line amount exceeds the supported range.");
+        verifyNoInteractions(orders, items, jdbc);
+    }
+
+    @Test
     void rejectsUnknownOrInactiveCustomer() {
         var error = assertThrows(OrderException.class, () -> service.create("checkout", request("0")));
 

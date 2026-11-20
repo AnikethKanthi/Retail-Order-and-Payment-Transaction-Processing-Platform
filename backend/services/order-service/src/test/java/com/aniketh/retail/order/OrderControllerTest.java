@@ -3,6 +3,7 @@ package com.aniketh.retail.order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -181,6 +182,42 @@ class OrderControllerTest {
                     .andExpect(status().isBadRequest());
         }
         verifyNoInteractions(service);
+    }
+
+    @Test
+    void rejectsMalformedCustomerInvalidProductAndInvalidQuantityTypes() throws Exception {
+        for (String payload : List.of(
+                REQUEST.replace(CUSTOMER.toString(), "invalid-uuid"),
+                REQUEST.replace("SKU-1", "\\u0000"),
+                REQUEST.replace("Example", "\\u00a0"),
+                REQUEST.replace("\"quantity\":2", "\"quantity\":-1"),
+                REQUEST.replace("\"quantity\":2", "\"quantity\":\"2\""),
+                REQUEST.replace("\"quantity\":2,", ""))) {
+            mvc.perform(post("/api/orders").header("Idempotency-Key", "checkout")
+                            .contentType(MediaType.APPLICATION_JSON).content(payload))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+        }
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void reportsUnavailableCustomerAndSanitizesPersistenceErrors() throws Exception {
+        when(service.create(eq("missing-customer"), any()))
+                .thenThrow(OrderException.invalid("customerId must identify an active customer."));
+        when(service.create(eq("database-error"), any()))
+                .thenThrow(new DataIntegrityViolationException("Sensitive details from the database"));
+
+        mvc.perform(post("/api/orders").header("Idempotency-Key", "missing-customer")
+                        .contentType(MediaType.APPLICATION_JSON).content(REQUEST))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.detail").value("customerId must identify an active customer."));
+
+        mvc.perform(post("/api/orders").header("Idempotency-Key", "database-error")
+                        .contentType(MediaType.APPLICATION_JSON).content(REQUEST))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.detail").value("The order operation could not be completed."));
     }
 
     private OrderSummary summary() {

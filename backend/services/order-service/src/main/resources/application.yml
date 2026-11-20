@@ -2,6 +2,8 @@ spring:
   application:
     name: order-service
   jackson:
+    mapper:
+      allow-coercion-of-scalars: false
     deserialization:
       accept-float-as-int: false
       fail-on-numbers-for-enums: true
@@ -9,6 +11,9 @@ spring:
     url: ${ORDER_DB_URL:jdbc:postgresql://localhost:5432/retail_platform}
     username: ${ORDER_DB_USER}
     password: ${ORDER_DB_PASSWORD:}
+    hikari:
+      data-source-properties:
+        logServerErrorDetail: false
   jpa:
     open-in-view: false
     hibernate:

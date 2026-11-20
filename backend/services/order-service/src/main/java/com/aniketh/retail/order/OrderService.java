@@ -1,10 +1,13 @@
 package com.aniketh.retail.order;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
 import java.math.BigDecimal;
 import java.util.Currency;
@@ -13,6 +16,7 @@ import java.util.UUID;
 import java.util.stream.IntStream;
 
 @Service
+@Validated
 class OrderService {
 
     private static final BigDecimal MAX_AMOUNT = new BigDecimal("999999999999999.9999");
@@ -27,7 +31,7 @@ class OrderService {
     }
 
     @Transactional
-    public Creation create(String key, CreateOrderRequest request) {
+    public Creation create(String key, @NotNull @Valid CreateOrderRequest request) {
         Order candidate = buildOrder(key, request);
 
         // Serialize concurrent requests for the same key until this transaction commits.
@@ -90,13 +94,13 @@ class OrderService {
             if (item.discountAmount.compareTo(gross) > 0) {
                 throw OrderException.invalid("Line " + item.lineNumber + " discount exceeds its gross amount.");
             }
-            checkRange(gross.subtract(item.discountAmount).add(item.taxAmount));
+            checkRange(item.calculatedTotal(gross));
             order.addItem(item);
         }
 
         checkRange(order.subtotal);
         checkRange(order.taxAmount);
-        checkRange(order.subtotal.subtract(order.discountAmount).add(order.taxAmount).add(order.shippingAmount));
+        checkRange(order.calculatedTotal());
         return order;
     }
 

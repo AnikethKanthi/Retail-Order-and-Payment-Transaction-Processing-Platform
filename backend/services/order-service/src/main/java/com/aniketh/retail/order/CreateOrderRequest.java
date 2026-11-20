@@ -14,12 +14,17 @@ public record CreateOrderRequest(
         @NotEmpty List<@NotNull @Valid Item> items
 ) {
     public record Item(
-            @NotBlank @Size(max = 64) @Pattern(regexp = "[^\\p{Cntrl}]+") String sku,
-            @NotBlank @Size(max = 255) @Pattern(regexp = "[^\\p{Cntrl}]+") String productName,
+            @NotBlank @Size(max = 64)
+            @Pattern(regexp = PRODUCT_TEXT, message = "must contain visible text and no control characters")
+            String sku,
+            @NotBlank @Size(max = 255)
+            @Pattern(regexp = PRODUCT_TEXT, message = "must contain visible text and no control characters")
+            String productName,
             @NotNull @Positive Integer quantity,
             @NotNull @PositiveOrZero @Digits(integer = 15, fraction = 4) BigDecimal unitPrice,
             @PositiveOrZero @Digits(integer = 15, fraction = 4) BigDecimal discountAmount,
             @PositiveOrZero @Digits(integer = 15, fraction = 4) BigDecimal taxAmount
     ) {
+        private static final String PRODUCT_TEXT = "[^\\p{Cc}]*[^\\p{Cc}\\p{Z}\\p{Cf}][^\\p{Cc}]*";
     }
 }
