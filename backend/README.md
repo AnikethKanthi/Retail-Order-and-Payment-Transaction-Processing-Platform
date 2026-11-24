@@ -1,8 +1,9 @@
 # Backend
 
 The backend is a Maven reactor with a parent POM, four service modules, and one
-shared library. The [Order Service](services/order-service/README.md) is runnable.
-The other services currently contain build and configuration scaffolding.
+shared library. The [Order Service](services/order-service/README.md) and
+[Payment Service](services/payment-service/README.md) are runnable. The other
+services currently contain build and configuration scaffolding.
 
 ## Prerequisites
 
@@ -41,7 +42,7 @@ Build a service and its reactor dependencies:
 ```
 
 The reactor builds the shared JAR before dependent services. `verify` runs the
-Order Service tests and packages its executable Spring Boot JAR.
+Order and Payment Service tests and packages their executable Spring Boot JARs.
 
 If Maven cannot remove generated output in a OneDrive checkout, use a dedicated
 build directory outside OneDrive. From the repository root in PowerShell:
@@ -72,8 +73,8 @@ version. Child POMs omit dependency versions; add future version overrides in th
 parent instead of repeating them across services.
 
 Services declare Spring Web, Validation, Actuator, and test starters. The Order
-Service also declares JPA and the PostgreSQL driver. The Boot Maven plugin is
-managed centrally and activated in the Order Service.
+Service uses JPA, and the Payment Service uses JDBC. Both use the PostgreSQL
+driver and activate the centrally managed Boot Maven plugin.
 When an application main class is added, declare the plugin in that service's
 `build/plugins` to enable executable JAR packaging. Keep `retail-shared` a normal
 library JAR without Boot repackaging.
