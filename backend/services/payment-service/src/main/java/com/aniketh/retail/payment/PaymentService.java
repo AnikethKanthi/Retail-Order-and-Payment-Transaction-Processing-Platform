@@ -2,6 +2,7 @@ package com.aniketh.retail.payment;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -20,20 +21,15 @@ class PaymentService {
         this.provider = provider;
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Initiation initiate(String key, InitiatePaymentRequest request) {
         payments.lockInitiation(key, request.orderId());
         var existing = payments.findByKey(key);
         if (existing.isPresent()) {
-            Payment payment = existing.get();
-            if (!payment.orderId().equals(request.orderId()) || !payment.currency().equals(request.currency())
-                    || payment.amount().compareTo(request.amount()) != 0) {
-                throw conflict("Idempotency key was already used with a different payment request.");
-            }
-            return new Initiation(payment, false);
+            return replay(existing.get(), request);
         }
         if (payments.hasActiveAttempt(request.orderId())) {
-            throw conflict("The order already has a pending or successful payment.");
+            throw activeAttemptConflict();
         }
 
         var order = orders.get(request.orderId());
@@ -43,7 +39,18 @@ class PaymentService {
         if (!order.currency().equals(request.currency()) || order.totalAmount().compareTo(request.amount()) != 0) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Amount and currency must match the order.");
         }
-        return new Initiation(payments.insert(key, request), true);
+        return payments.insert(key, request)
+                .map(payment -> new Initiation(payment, true))
+                .orElseGet(() -> replay(payments.findByKey(key).orElseThrow(PaymentService::activeAttemptConflict),
+                        request));
+    }
+
+    private Initiation replay(Payment payment, InitiatePaymentRequest request) {
+        if (!payment.orderId().equals(request.orderId()) || !payment.currency().equals(request.currency())
+                || payment.amount().compareTo(request.amount()) != 0) {
+            throw conflict("Idempotency key was already used with a different payment request.");
+        }
+        return new Initiation(payment, false);
     }
 
     public Payment get(UUID id) {
@@ -54,7 +61,7 @@ class PaymentService {
         return payments.findByOrder(orderId);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Payment simulate(UUID id, MockPaymentProvider.Outcome outcome) {
         Payment payment = payments.lockPayment(id).orElseThrow(PaymentService::notFound);
         if (!MockPaymentProvider.NAME.equals(payment.provider())) {
@@ -78,6 +85,10 @@ class PaymentService {
 
     private static ResponseStatusException conflict(String message) {
         return new ResponseStatusException(HttpStatus.CONFLICT, message);
+    }
+
+    private static ResponseStatusException activeAttemptConflict() {
+        return conflict("The order already has an active or successful payment.");
     }
 
     record Initiation(Payment payment, boolean created) {

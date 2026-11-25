@@ -28,6 +28,7 @@ java -jar services/payment-service/target/payment-service-0.1.0-SNAPSHOT.jar
   requires an `Idempotency-Key` header. The order must be awaiting payment, and
   the amount and currency must match its total. Creation returns `201` with
   status `PENDING`. An equivalent retry returns the existing payment as `200`.
+  The payment ID remains the same, and the response reflects its current status.
   A different request with the same key or a second active attempt returns `409`.
 - `POST /api/payments/{id}/simulate` takes `{"outcome":"SUCCESS"}` or
   `{"outcome":"FAILED"}`. The mock provider records an append-only transaction
@@ -41,3 +42,17 @@ The provider is a local simulator. The API accepts no payment credentials and
 makes no calls to payment networks. The REST status `SUCCESS` maps to the
 existing database status `CAPTURED`. Simulation updates only Payment Service
 data, so Order Service status changes are a separate operation.
+
+## Idempotency and concurrency
+
+Initiation stores the supplied request key on the payment. PostgreSQL enforces
+global key uniqueness and, as of migration V6, one active payment per order.
+Apply V6 before deploying this version. If a database already has multiple
+active attempts for an order, reconcile those rows before retrying the migration.
+Completion uses a fixed operation key scoped to the payment and commits the
+transaction record and status update together.
+
+To run the concurrency tests, apply the migrations to a disposable PostgreSQL
+database and set `PAYMENT_DB_URL`, `PAYMENT_DB_USER`, `PAYMENT_DB_PASSWORD`, and
+`PAYMENT_DB_CONCURRENCY_TEST=true` before running Maven. The tests leave
+append-only payment history in that database.

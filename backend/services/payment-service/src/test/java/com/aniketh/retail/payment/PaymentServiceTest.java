@@ -33,7 +33,7 @@ class PaymentServiceTest {
     void validatesOrderAndStartsPendingPayment() {
         var pending = payment(PaymentStatus.PENDING);
         when(orders.get(ORDER_ID)).thenReturn(order("PENDING_PAYMENT", AMOUNT));
-        when(payments.insert("key", REQUEST)).thenReturn(pending);
+        when(payments.insert("key", REQUEST)).thenReturn(Optional.of(pending));
 
         assertThat(service.initiate("key", REQUEST)).isEqualTo(new PaymentService.Initiation(pending, true));
         verify(payments).lockInitiation("key", ORDER_ID);
@@ -71,6 +71,25 @@ class PaymentServiceTest {
         assertThat(assertThrows(ResponseStatusException.class, () -> service.initiate("key", REQUEST))
                 .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         verifyNoInteractions(orders, provider);
+    }
+
+    @Test
+    void resolvesInsertConflictUsingCommittedRequest() {
+        var existing = payment(PaymentStatus.PENDING);
+        when(orders.get(ORDER_ID)).thenReturn(order("PENDING_PAYMENT", AMOUNT));
+        when(payments.findByKey("key")).thenReturn(Optional.empty(), Optional.of(existing));
+        when(payments.insert("key", REQUEST)).thenReturn(Optional.empty());
+
+        assertThat(service.initiate("key", REQUEST)).isEqualTo(new PaymentService.Initiation(existing, false));
+    }
+
+    @Test
+    void treatsInsertConflictWithoutMatchingKeyAsAnActiveAttempt() {
+        when(orders.get(ORDER_ID)).thenReturn(order("PENDING_PAYMENT", AMOUNT));
+        when(payments.insert("key", REQUEST)).thenReturn(Optional.empty());
+
+        assertThat(assertThrows(ResponseStatusException.class, () -> service.initiate("key", REQUEST))
+                .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
     }
 
     @Test

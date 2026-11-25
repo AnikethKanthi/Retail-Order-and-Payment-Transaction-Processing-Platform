@@ -42,14 +42,15 @@ class PaymentRepository {
                 """).param("orderId", orderId).query(Boolean.class).single();
     }
 
-    Payment insert(String key, InitiatePaymentRequest request) {
+    Optional<Payment> insert(String key, InitiatePaymentRequest request) {
         return jdbc.sql("""
                 INSERT INTO payment_service.payments (order_id, idempotency_key, provider, amount, currency)
                 VALUES (:orderId, :key, :provider, :amount, :currency)
+                ON CONFLICT DO NOTHING
                 RETURNING *
                 """).param("orderId", request.orderId()).param("key", key)
                 .param("provider", MockPaymentProvider.NAME).param("amount", request.amount())
-                .param("currency", request.currency()).query(MAPPER).single();
+                .param("currency", request.currency()).query(MAPPER).optional();
     }
 
     Optional<Payment> find(UUID id) {
