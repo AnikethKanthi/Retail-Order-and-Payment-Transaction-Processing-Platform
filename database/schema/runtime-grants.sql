@@ -12,6 +12,7 @@ GRANT SELECT, INSERT ON payment_service.transaction_records TO retail_payment_ap
 
 GRANT USAGE ON SCHEMA inventory_service TO retail_inventory_app;
 GRANT SELECT, INSERT, UPDATE ON inventory_service.inventory TO retail_inventory_app;
+GRANT SELECT, INSERT, UPDATE ON inventory_service.reservations TO retail_inventory_app;
 
 -- No grants for notification-service: it has no persistence in this phase.
 -- New tables require explicit grants in a reviewed deployment change.

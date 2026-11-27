@@ -11,7 +11,7 @@ deployment authority from logical service ownership.
 | --- | --- | --- |
 | Order | `order_service.customers`, `orders`, `order_items` | Customer profiles and order lifecycle; owns checkout price snapshots |
 | Payment | `payment_service.payments`, `transaction_records` | Payment attempts and append-only provider operation observations |
-| Inventory | `inventory_service.inventory` | Stock and reservation balances per SKU/warehouse |
+| Inventory | `inventory_service.inventory`, `reservations` | Stock balances per SKU/warehouse and individually tracked reservations |
 | Notification | None yet | Consumes events; no direct reads/writes to another service's tables |
 
 Customer ownership is assigned to order-service because there is no customer
@@ -155,9 +155,10 @@ sums. Unique idempotency keys reject duplicates but do not implement response re
 or payload mismatch detection; those remain service responsibilities.
 
 No distributed SQL transaction is assumed. Cross-service failures need idempotent
-handlers and compensation. Reservation detail/expiry, inbox deduplication, and a
-transactional outbox are future work; the current stock balance alone does not
-identify which order owns a reservation.
+handlers and compensation. Reservation expiry, inbox deduplication, and a
+transactional outbox are future work. Inventory tracks each new reservation by
+client-provided UUID and applies release or deduction to that reservation exactly
+once. Order association can be managed by the caller using the reservation ID.
 
 Customer/order/payment deletion is restricted by foreign keys and omitted from
 runtime grants. Transaction UPDATE/DELETE is additionally rejected by a trigger.
